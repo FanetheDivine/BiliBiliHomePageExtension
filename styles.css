@@ -1,0 +1,9 @@
+/* 轮换推荐框改为flex布局 */
+.recommended-swipe.grid-anchor{
+    display:flex;
+    flex-wrap: wrap;
+}
+/* 轮换推荐框不显示原有的内容 */
+.recommended-swipe-core{
+    display:none !important;
+}
