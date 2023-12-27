@@ -5,6 +5,7 @@
         ?.find(item => item[0] === 'DedeUserID')
         ?.[1]
     if (!mid) {
+        alert('未登录，无法启用插件功能')
         return
     }
     const container = document.querySelector('.recommended-swipe.grid-anchor')
