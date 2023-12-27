@@ -1,14 +1,92 @@
+(() => {
+    const mid = document.cookie
+        ?.split('; ')
+        ?.map(str => str.split('='))
+        ?.find(item => item[0] === 'DedeUserID')
+        ?.[1]
+    if (!mid) {
+        return
+    }
+    const container = document.querySelector('.recommended-swipe.grid-anchor')
+    container.style.position = 'relative'
+    const rollButton = document.createElement('button')
+    container.append(rollButton)
+    rollButton.classList.add('primary-btn')
+    rollButton.style = 'position:absolute;top:0;right:100%;transform:translate(-10px);height:auto;'
+    rollButton.innerText = '换一批'
+    rollButton.addEventListener('click', rollCards)
+    const card = document.createElement('div')
+    container.append(card)
+    card.style = 'position:absolute;inset:0 0 0 0;z-index:1;background-color:white;display:grid;grid-template-columns: repeat(2,1fr);grid-gap:20px;'
+
+    let videoIndex = 0
+    async function rollCards() {
+        if (!window.__MEDIAS) {
+            return
+        }
+        const videos = window.__MEDIAS.slice(videoIndex, videoIndex + 4)
+        videoIndex += 4
+        console.log(videos)
+        const videoInfo = videos.map(item => {
+            return getVideoCard(
+                `https://www.bilibili.com/video/${item.bvid}`,
+                item.cover.replace('http', 'https'),
+                item.cnt_info.view_text_1,
+                item.cnt_info.danmaku,
+                formateTime(item.duration),
+                item.title,
+                `https://space.bilibili.com/${item.upper.mid}`,
+                item.upper.name,
+                new Date(item.pubtime * 1000).toLocaleDateString()
+            )
+        })
+        card.innerHTML = videoInfo.join('')
+    }
+
+    function formateTime(time) {
+        const h = parseInt(time / 3600)
+        const minute = parseInt(time / 60 % 60)
+        const second = Math.ceil(time % 60)
+
+        const hours = h < 10 ? '0' + h : h
+        const formatSecond = second > 59 ? 59 : second
+        return `${hours > 0 ? `${hours}:` : ''}${minute < 10 ? '0' + minute : minute}:${formatSecond < 10 ? '0' + formatSecond : formatSecond}`
+    }
+
+    /** 向window中添加当前用户的所有收藏视频 */
+    (async () => {
+        const url = `https://api.bilibili.com/x/v3/fav/folder/created/list-all?up_mid=${mid}`
+        const favLists = await fetch(url, { credentials: "include" })
+            .then(res => res.json())
+            .then(data => data?.data?.list)
+        const mediaLists = await Promise.all(favLists?.map(async item => {
+            const favId = item.id
+            const mediaCount = item.media_count
+            const totalPage = Math.ceil(mediaCount / 20)
+            const mediaLists = await Promise.all(new Array(totalPage).fill().map((item, index) => {
+                const url = `https://api.bilibili.com/x/v3/fav/resource/list?media_id=${favId}&pn=${index + 1}&ps=20&keyword=&order=mtime&type=0&tid=0&platform=web`
+                return fetch(url, { credentials: "include" }).then(res => res.json()).then(data => data.data.medias)
+            }))
+            return mediaLists.flat()
+        }))
+        window.__MEDIAS = mediaLists.flat().sort(() => Math.random() - 0.5)
+        rollCards()
+    })()
+
+    function getVideoCard(videoHref, cover, view, bullet, duration, title, uploaderHref, uploader, uploadDate) {
+        return `
 <div data-v-6f3c6166="" class="feed-card">
     <div data-v-6f3c6166="" class="bili-video-card is-rcmd" data-report="tianma.1-1-1.click"
         style="--cover-radio: 56.25%;">
-        <div class="bili-video-card__wrap __scale-wrap"><a
-                href="${videoHref}"
+        <div class="bili-video-card__wrap __scale-wrap">
+                <a href="${videoHref}"
                 target="_blank" rel="noopener" data-target-url="https://www.bilibili.com/video/BV1Yb4y137w3"
                 data-spmid="333.1007" data-mod="tianma.1-1-1" data-idx="click">
                 <div class="bili-video-card__image __scale-player-wrap bili-video-card__image--hover">
                     <div class="bili-video-card__image--wrap">
-                        <picture class="v-img bili-video-card__cover"><img
-                                src="//i2.hdslb.com/bfs/archive/0d159d4bba78eaea4a4b9dd2c695ddbed31d91ce.jpg@672w_378h_1c_!web-home-common-cover"
+                        <picture class="v-img bili-video-card__cover" style="    box-shadow: #00ffd6 0 0 5px 1px;
+                        "><img
+                                src="${cover}"
                                 alt="" loading="eager" onload=""
                                 onerror="typeof window.imgOnError === 'function' &amp;&amp; window.imgOnError(this)">
                         </picture>
@@ -75,3 +153,6 @@
         </div>
     </div>
 </div>
+        `
+    }
+})()

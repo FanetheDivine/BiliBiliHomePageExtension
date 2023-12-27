@@ -1,0 +1,26 @@
+{
+    "name": "bilibili-homepage",
+    "version": "1.0",
+    "manifest_version": 3,
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "template.html"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://www.bilibili.com/"
+            ],
+            "js": [
+                "content-script.js"
+            ],
+            "run_at": "document_end"
+        }
+    ]
+}
