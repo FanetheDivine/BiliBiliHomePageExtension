@@ -24,9 +24,14 @@
         if (!window.__MEDIAS) {
             return
         }
-        const videos = window.__MEDIAS.slice(videoIndex, videoIndex + 4)
-        videoIndex += 4
-        console.log(videos)
+        const videos = []
+        new Array(4).fill().forEach(() => {
+            if (videoIndex === window.__MEDIAS.length) {
+                videoIndex = 0
+            }
+            videos.push(window.__MEDIAS[videoIndex])
+            ++videoIndex
+        })
         const videoInfo = videos.map(item => {
             return getVideoCard(
                 `https://www.bilibili.com/video/${item.bvid}`,
@@ -55,7 +60,7 @@
 
     /** 向window中添加当前用户的所有收藏视频 */
     (async () => {
-        const url = `https://api.bilibili.com/x/v3/fav/folder/created/list-all?up_mid=${mid}`
+        const url = `https://api.bilibili.com/x/v3/fav/folder/created/list-all?timestamp=${new Date().getTime()}&up_mid=${mid}`
         const favLists = await fetch(url, { credentials: "include" })
             .then(res => res.json())
             .then(data => data?.data?.list)
@@ -64,12 +69,12 @@
             const mediaCount = item.media_count
             const totalPage = Math.ceil(mediaCount / 20)
             const mediaLists = await Promise.all(new Array(totalPage).fill().map((item, index) => {
-                const url = `https://api.bilibili.com/x/v3/fav/resource/list?media_id=${favId}&pn=${index + 1}&ps=20&keyword=&order=mtime&type=0&tid=0&platform=web`
+                const url = `https://api.bilibili.com/x/v3/fav/resource/list?timestamp=${new Date().getTime()}&media_id=${favId}&pn=${index + 1}&ps=20&keyword=&order=mtime&type=0&tid=0&platform=web`
                 return fetch(url, { credentials: "include" }).then(res => res.json()).then(data => data.data.medias)
             }))
             return mediaLists.flat()
         }))
-        window.__MEDIAS = mediaLists.flat().sort(() => Math.random() - 0.5)
+        window.__MEDIAS = mediaLists?.flat().sort(() => Math.random() - 0.5)
         rollCards()
     })()
 
